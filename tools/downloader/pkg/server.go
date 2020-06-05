@@ -14,7 +14,7 @@ import (
 type Server struct {
 	srv     *http.Server
 	dl      *Downloader
-	up      *Uploader
+	up      Uploader
 	tlsCert string
 	tlsKey  string
 }
@@ -27,7 +27,7 @@ type ServerOpts struct {
 }
 
 // NewServer returns an initialized webhook server
-func NewServer(opts ServerOpts, dl *Downloader, up *Uploader) *Server {
+func NewServer(opts ServerOpts, dl *Downloader, up Uploader) *Server {
 	router := chi.NewRouter()
 	router.HandleFunc("/github/webhook/payload", func(w http.ResponseWriter, r *http.Request) {
 		var out map[interface{}]interface{}

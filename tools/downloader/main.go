@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
 
+	"github.com/2020PB/police-brutality/pkg"
 	. "github.com/2020PB/police-brutality/pkg"
 	"github.com/urfave/cli/v2"
 )
@@ -17,6 +19,39 @@ func main() {
 		&cli.Command{
 			Name:  "webhook-server",
 			Usage: "runs the webhook server",
+			Action: func(c *cli.Context) error {
+				var (
+					ctx, cancel = context.WithCancel(context.Background())
+					dl          = New(c.String("log.file"), c.String("directory"), c.Int("concurrency"))
+					up          pkg.Uploader
+					err         error
+				)
+				defer cancel()
+				if c.Bool("upload.to_ipfs") {
+					up, err = NewIPFSUploader(c.String("ipfs.endpoint"), c.String("ipfs.auth_token"))
+					if err != nil {
+						return err
+					}
+				}
+				srv := pkg.NewServer(pkg.ServerOpts{
+					ListenAddress: c.String("listen.address"),
+					TLSCert:       c.String("tls.cert"),
+					TLSKey:        c.String("tls.key"),
+				}, dl, up)
+				return srv.Run(ctx)
+			},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "listen.address",
+					Value: "localhost:1234",
+				},
+				&cli.StringFlag{
+					Name: "tls.cert",
+				},
+				&cli.StringFlag{
+					Name: "tls.key",
+				},
+			},
 		},
 		&cli.Command{
 			Name:  "start",
